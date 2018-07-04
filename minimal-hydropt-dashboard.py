@@ -494,9 +494,9 @@ def dash_router(inits, url=''):
 				['Result overview', '/d/DisplayScreen@screen=ResultOverview&asset='+inits.getArgs()['asset'], 'menu-item-active' if inits.getArgs()['screen'] == 'ResultOverview' else 'menu-item'], 
 				['Engine results', '/d/DisplayScreen@screen=EngineResults&asset='+inits.getArgs()['asset'], 'menu-item-active' if inits.getArgs()['screen'] == 'EngineResults' else 'menu-item']]], 
 			['Assets', [
-				['VSM', '/d/DisplayScreen@asset=Alperia-VSM&screen='+inits.getArgs()['screen'], 'menu-item-active' if inits.getArgs()['asset'] == 'Alperia-VSM' else 'menu-item'], 
-				['FMHL+', '/d/DisplayScreen@asset=Alpiq-FMHL&screen='+inits.getArgs()['screen'], 'menu-item-active' if inits.getArgs()['asset'] == 'Alpiq-FMHL' else 'menu-item'],
-				['TM',  '/d/DisplayScreen@asset=TAH-TM&screen='+inits.getArgs()['screen'], 'menu-item-active' if inits.getArgs()['asset'] == 'TAH-TM' else 'menu-item']]]]
+				['Valle Selva Meloni', '/d/DisplayScreen@asset=Alperia-VSM&screen='+inits.getArgs()['screen'], 'menu-item-active' if inits.getArgs()['asset'] == 'Alperia-VSM' else 'menu-item'], 
+				['Hongrin-Léman', '/d/DisplayScreen@asset=Alpiq-FMHL&screen='+inits.getArgs()['screen'], 'menu-item-active' if inits.getArgs()['asset'] == 'Alpiq-FMHL' else 'menu-item'],
+				['Testmodell',  '/d/DisplayScreen@asset=TAH-TM&screen='+inits.getArgs()['screen'], 'menu-item-active' if inits.getArgs()['asset'] == 'TAH-TM' else 'menu-item']]]]
 		navPane = CNavigationPane(menu)
 		if screenComponents is not None:
 			children = [navPane.getDashRendering(), screenComponents.getDashRendering()]
