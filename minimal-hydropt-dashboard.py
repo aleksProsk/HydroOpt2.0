@@ -100,7 +100,12 @@ class CRestricted(object):
 	def getUser(self): return self.__user
 
 class CHydropt(CRestricted):
-	def __init__(self, user): super().__init__(user)
+	def __init__(self, user): 
+		super().__init__(user)
+		self.__assetNames = {
+			'Alperia-VSM': 'Valle Selva Meloni',
+			'Alpiq-FMHL': 'Hongrin-Léman',
+			'TAH-TM': 'Testmodell'}
 	def getData(self, filepath): 
 		#todo: dynamsieren
 		pathLookup = {
@@ -108,6 +113,7 @@ class CHydropt(CRestricted):
 			'Alpiq-FMHL': 'models\\FMHLplus.mod',
 			'TAH-TM': 'models\\Testmodell.mod'}
 		return load_hydropt_data(pathLookup[filepath])
+	def getAssetName(self, asset): return self.__assetNames[asset]
 		
 class CSafeNP(CRestricted):
 	def __init__(self, user=CUser()): super().__init__(user)
