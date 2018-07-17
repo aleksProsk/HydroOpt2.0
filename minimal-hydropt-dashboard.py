@@ -19,7 +19,7 @@ from oct2py import octave
 from flask import Flask
 from flask import send_from_directory
 from dash import Dash
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 import dash_html_components as html
 import dash_core_components as dcc
 import dash_table_experiments as dt
@@ -28,7 +28,7 @@ import random
 from pandas import DataFrame, DatetimeIndex
 import pandas as pd
 import numpy as np
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
 import plotly.graph_objs as go
 
@@ -92,11 +92,13 @@ class CUser(object):
 
 class CRestricted(object):
 	__id = 0
-	def getID(): return str(CRestricted.__id)
-	getID = staticmethod(getID)
+	def getID(self): return str(self.__localID) #str(CRestricted.__id)
+	def getNumberOfInstances(): return str(CRestricted.__id)
+	getNumberOfInstances = staticmethod(getNumberOfInstances)
 	def __init__(self, user): 
 		self.__user = user
 		CRestricted.__id += 1
+		self.__localID = CRestricted.__id
 	def getUser(self): return self.__user
 
 class CHydropt(CRestricted):
@@ -203,8 +205,13 @@ class CText(CDashComponent):
 	def getText(self): return self.__text
 	def setText(self, text): 
 		self.__text = text
-		super().setDashRendering(html.P(str(text), className = 'text'))
-	
+		super().setDashRendering(html.P(str(text), className = 'text', id=str(super().getID())))  
+		
+class CStopWaitingForGraphics(CDashComponent):
+	def __init__(self): 
+		super().__init__()
+		super().setDashRendering(html.P("", className = 'CStopWaitingForGraphics'))	
+
 class CNumber(CText):
 	def __init__(self, value, unit):
 		super().__init__(str(value) + " " + unit)
@@ -316,6 +323,85 @@ class CChart(CDashComponent):
 		self._setFigure()
 		chart = dcc.Graph(id=super().getID(), figure=self._getFigure())
 		super().setDashRendering(chart)
+		
+def update_output_A(start_date, end_date):
+	print("callb")
+	string_prefix = 'You have selected: '
+	if start_date is not None:
+		start_date = datetime.strptime(start_date, '%Y-%m-%d')
+		start_date_string = start_date.strftime('%B %d, %Y')
+		string_prefix = string_prefix + 'Start Date: ' + start_date_string + ' | '
+	if end_date is not None:
+		end_date = datetime.strptime(end_date, '%Y-%m-%d')
+		end_date_string = end_date.strftime('%B %d, %Y')
+		string_prefix = string_prefix + 'End Date: ' + end_date_string
+	if len(string_prefix) == len('You have selected: '):
+		return 'Select a date to see it displayed here'
+	else:
+		return string_prefix
+		
+class CDatePicker(CDashComponent):
+	#Initialising function
+	def __init__(self, callb=update_output_A, output=None, outputParam='children', minDate=(1995, 8, 5), maxDate=(2017, 9, 19), startDate=(2017, 8, 5), endDate=(2017, 8, 25), retrieveOldValue=False): 
+		super().__init__()
+		self.setDatePicker(callb, output, outputParam, minDate, maxDate, startDate, endDate)
+	#Updating function. It is called every time user changes the time range to store current information about date range
+	def internal_update(self):
+		def changeData(start_date, end_date):
+			if start_date is not None:
+				self.__start_date = start_date
+			if end_date is not None:
+				self.__end_date = end_date
+			print('lol')
+		return changeData
+	#Wrapper to get the layout of object
+	def getRendering(self): return self.__rendering
+	#These are the functions to get decorators for callbacks
+	def __getCallbDecorator(self): 
+		outp = None
+		if self.__output is None:
+			outp = 'none-' + str(super().getID())
+		else:
+			outp = self.__output.getID()
+		print(self.__output.getID())
+		print(self.__outputParam)
+		print(super().getID())
+		return (
+			Output(str(outp), self.__outputParam),
+			[Input('my-date-picker-range-' + str(super().getID()), 'start_date'),
+			 Input('my-date-picker-range-' + str(super().getID()), 'end_date')])
+	def __getFakeCallbDecorator(self):
+		return (
+		Output('fake-container-' + str(super().getID()), 'children'),
+		[Input('my-date-picker-range-' + str(super().getID()), 'start_date'),
+		 Input('my-date-picker-range-' + str(super().getID()), 'end_date')])
+	#Wrapper for a callback function
+	def getCallback(self): return self.__cb
+	#Creating callbacks for object
+	def __registerCallb(self):
+		print('register callbacks in datepicker')
+		dash_app.callback(*self.__getFakeCallbDecorator())(self.internal_update())
+		#dash_app.callback(*self.__getCallbDecorator())(self.getCallback())
+	#Function to receive the date range
+	def getSelectedRange(self):
+		return [self.__start_date, self.__end_date]
+	def setDatePicker(self, callb, output, outputParam, minDate, maxDate, startDate, endDate):
+		self.__cb = callb
+		self.__start_date = datetime(*startDate).date()
+		self.__end_date = datetime(*endDate).date()
+		self.__output = output
+		self.__outputParam = outputParam
+		super().setDashRendering(html.Div([dcc.DatePickerRange(
+			id='my-date-picker-range-' + str(super().getID()),
+			min_date_allowed=datetime(*minDate),
+			max_date_allowed=datetime(*maxDate),
+			initial_visible_month=datetime(*startDate),
+			end_date=datetime(*endDate).date(),
+			start_date=datetime(*startDate).date()),
+			html.Div(id='fake-container-' + str(super().getID()), style={'display':'none'})]))
+		self.__registerCallb()
+		
+
 
 @lru_cache(maxsize=32)
 def crf_mem(body, name): return compile_restricted_function(p = '', body = body, name = name, filename = '<inline code>')
@@ -350,7 +436,9 @@ def load_script_uid(scriptpath, name, uid, args):
 		'dateUtils' : CSafeDateUtils(),
 		'CPage': CPage,
 		'CText': CText,
+		'CStopWaitingForGraphics': CStopWaitingForGraphics,
 		'CNumbers': CNumbers,
+		'datePicker': datePicker,
 		'args':CSafeDict(args, user=user)}
 	return load_script(scriptpath, globals, {}, name)
 	
@@ -382,6 +470,8 @@ dt0 = dt.DataTable(
 	id=str(hash('dt0'))
 )
 
+
+
 print("start servers...")
 flask_app = Flask(__name__)
 dash_app = Dash(__name__, server=flask_app, url_base_pathname='/d/')
@@ -392,6 +482,7 @@ dash_app.layout = html.Div(id='page-content', children=[dcc.Location(id='url', r
 
 dash_app.css.config.serve_locally = False
 dash_app.scripts.config.serve_locally = False
+dash_app.config.supress_callback_exceptions = True
 
 #copy css and js files to static folder
 STATIC_FOLDER = os.path.join(os.getcwd(), 'static') #'/cygdrive/c/Users/Aleksandr Proskurin/Documents/work/MyDashFiles/static/' #todo temporäres verzeichnis ("with tempfile.TemporaryDirectory() as dirpath:")
@@ -414,6 +505,8 @@ JS_PATHS = [
 (lambda x: copyfile(x, os.path.join(STATIC_FOLDER, os.path.basename(x)))) /m/ (CSS_PATHS + JS_PATHS)
 (lambda x: dash_app.css.append_css			({"external_url": STATIC_URL + x})) /m/ (os.path.basename /m/ CSS_PATHS)
 (lambda x: dash_app.scripts.append_script	({"external_url": STATIC_URL + x})) /m/ (os.path.basename /m/ JS_PATHS)
+
+datePicker = CDatePicker()
 
 @flask_app.route('/')
 def hello_world():
@@ -506,4 +599,29 @@ def dash_router(inits, url=''):
 		print("render-pointer is none")
 	return children
 #http://localhost:5000/d/DisplayScreen@screen=ResultOverview&asset=Alperia-VSM
+#http://localhost:5000/d/DisplayScreen@screen=test
 	
+'''
+dash_app.callback( 
+	Output('12', 'children'),
+	[Input('my-date-picker-range-' + str("13"), 'start_date'),
+	Input('my-date-picker-range-' + str("13"), 'end_date')])(update_output_A)
+	
+	
+dash_app.callback( 
+	Output('StaticOutputDivId', 'children'),
+	[Input('StaticInputDivId', 'll')])(dashOutputRouter)
+	
+def dashOutputRouter(x):
+	x => (f, args)
+	f(args) => y => divifiedy
+	return divifiedy
+'''
+
+'''
+@dash_app.callback(Output('fake-container-' + str(13), 'children'),
+		[Input('my-date-picker-range-' + str(13), 'start_date'),
+		 Input('my-date-picker-range-' + str(13), 'end_date')])
+def tmp(a, b):
+	print('lol')
+'''

@@ -7,19 +7,21 @@ import random
 class CDatePicker(object):
 	#Initialising function
 	#TODO: create an opportunity to define the output object. Now it is only simple div "output-container-date-picker-range"
-	def __init__(self, callb, minDate=(1995, 8, 5), maxDate=(2017, 9, 19), initDate=(2017, 8, 5), endDate=(2017, 8, 25)): 
+	def __init__(self, callb, outputId, outputParam='children', minDate=(1995, 8, 5), maxDate=(2017, 9, 19), startDate=(2017, 8, 5), endDate=(2017, 8, 25)): 
 		self.__id = random.randint(0,1e6)
 		self.__cb = callb
-		self.__start_date = dt(*initDate).date()
+		self.__start_date = dt(*startDate).date()
 		self.__end_date = dt(*endDate).date()
+		self.__outputId = outputId
+		self.__outputParam = outputParam
 		self.__rendering = [dcc.DatePickerRange(
 			id='my-date-picker-range-' + str(self.__id),
 			min_date_allowed=dt(*minDate),
 			max_date_allowed=dt(*maxDate),
-			initial_visible_month=dt(*initDate),
+			initial_visible_month=dt(*startDate),
 			end_date=dt(*endDate).date(),
-			start_date=dt(*initDate).date()),
-			html.Div(id='output-container-date-picker-range-' + str(self.__id)),
+			start_date=dt(*startDate).date()),
+			#html.Div(id='output-container-date-picker-range-' + str(self.__id)),
 			html.Div(id='fake-container-' + str(self.__id), style={'display':'none'})]
 	#Updating function. It is called every time user changes the time range to store current information about date range
 	def update(self):
@@ -36,7 +38,7 @@ class CDatePicker(object):
 	def getRendering(self): return self.__rendering
 	#These are the functions to get decorators for callbacks
 	def getCallbDecorator(self): return (
-		dash.dependencies.Output('output-container-date-picker-range-' + str(self.__id), 'children'),
+		dash.dependencies.Output(self.__outputId, self.__outputParam),
 		[dash.dependencies.Input('my-date-picker-range-' + str(self.__id), 'start_date'),
 		 dash.dependencies.Input('my-date-picker-range-' + str(self.__id), 'end_date')])
 	def getFakeCallbDecorator(self):

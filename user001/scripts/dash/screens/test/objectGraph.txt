@@ -1,0 +1,14 @@
+d = [{
+    'output': {
+        'object': 'myOutput',
+        'param': 'children',
+        'type': 'CText',
+    },
+    'input': [
+        {
+            'object': 'myDatePicker',
+            'type': 'CDatePicker',
+        }
+    ],
+    'callback': 'nameOfFunction',
+},]

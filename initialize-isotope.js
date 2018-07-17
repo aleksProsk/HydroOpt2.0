@@ -44,7 +44,8 @@ function onReady(callback) {
         if (
 			//document.getElementsByTagName('footer')[0] !== undefined)
 			//document.getElementById('_dash-app-content') !== undefined)
-			document.getElementsByClassName('modebar-btn plotlyjsicon modebar-btn--logo')[0] !== undefined)
+			document.getElementsByClassName('modebar-btn plotlyjsicon modebar-btn--logo')[0] !== undefined ||
+			document.getElementsByClassName('CStopWaitingForGraphics')[0] !== undefined)
 		{
             window.clearInterval(intervalID);
             callback.call(this);
