@@ -7,11 +7,13 @@ myFrame.aChild(myText)
 myFrame.aChild(myWaitStopper)
 
 myOutput = CText("Here would be selected date range!")
-myDatePicker = datePicker #(output=myOutput)
+myDatePicker = CDatePicker(output=myOutput)
 myFrame.aChild(myDatePicker)
 myFrame.aChild(myOutput)
 
 log.print(myDatePicker.getSelectedRange())
+
+mya = Create(CDatePicker, {'name': 'mya', 'outputParam':'children'})
 
 myScreen = CPage('Test')
 myScreen.aChild(myFrame)

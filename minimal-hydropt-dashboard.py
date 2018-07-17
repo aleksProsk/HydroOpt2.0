@@ -131,6 +131,7 @@ class CSafeDict(CRestricted):
 		super().__init__(user)
 		self.__d = dict
 	def get(self, s): return self.__d[s]
+	def getDict(self): return self.__d
 	
 class CSafeDateUtils(CRestricted):
 	def __init__(self, user=CUser()): super().__init__(user)
@@ -339,7 +340,8 @@ def update_output_A(start_date, end_date):
 		return 'Select a date to see it displayed here'
 	else:
 		return string_prefix
-		
+			
+
 class CDatePicker(CDashComponent):
 	#Initialising function
 	def __init__(self, callb=update_output_A, output=None, outputParam='children', minDate=(1995, 8, 5), maxDate=(2017, 9, 19), startDate=(2017, 8, 5), endDate=(2017, 8, 25), retrieveOldValue=False): 
@@ -399,9 +401,8 @@ class CDatePicker(CDashComponent):
 			end_date=datetime(*endDate).date(),
 			start_date=datetime(*startDate).date()),
 			html.Div(id='fake-container-' + str(super().getID()), style={'display':'none'})]))
-		self.__registerCallb()
-		
-
+		#self.__registerCallb()
+		print(self.__outputParam)
 
 @lru_cache(maxsize=32)
 def crf_mem(body, name): return compile_restricted_function(p = '', body = body, name = name, filename = '<inline code>')
@@ -417,7 +418,11 @@ def load_script(scriptpath, additional_globals, safe_locals, name):
 class HDict(dict): 
 	def __hash__(self): return hash(str(self))#hash(frozenset(self.items()))  #hashable dictionary
 	
-
+def CreateObjectWithScreeName(o, scName, **args):
+	print(scName)
+	print(args)
+	print(o)
+	return o(args)
 
 #@lru_cache(maxsize=32) todo führt dazu, dass seite nicht neu geladen wird
 def load_script_uid(scriptpath, name, uid, args):
@@ -438,7 +443,8 @@ def load_script_uid(scriptpath, name, uid, args):
 		'CText': CText,
 		'CStopWaitingForGraphics': CStopWaitingForGraphics,
 		'CNumbers': CNumbers,
-		'datePicker': datePicker,
+		'CDatePicker': CDatePicker,
+		'Create': lambda o, *a: CreateObjectWithScreeName(o=o, scName=args['screen'], args=a),
 		'args':CSafeDict(args, user=user)}
 	return load_script(scriptpath, globals, {}, name)
 	
@@ -505,8 +511,6 @@ JS_PATHS = [
 (lambda x: copyfile(x, os.path.join(STATIC_FOLDER, os.path.basename(x)))) /m/ (CSS_PATHS + JS_PATHS)
 (lambda x: dash_app.css.append_css			({"external_url": STATIC_URL + x})) /m/ (os.path.basename /m/ CSS_PATHS)
 (lambda x: dash_app.scripts.append_script	({"external_url": STATIC_URL + x})) /m/ (os.path.basename /m/ JS_PATHS)
-
-datePicker = CDatePicker()
 
 @flask_app.route('/')
 def hello_world():
