@@ -10,7 +10,9 @@ def readDict(source_code):
         mode = 'exec'
     )
     exec(byte_code, safe_builtins, locals)
-    return locals['d']
+    if 'd' in locals:
+        return locals['d']
+    return []
 
 def parse(uid):
     path = "user" + uid + "/scripts/dash/screens/"
@@ -29,4 +31,3 @@ def parse(uid):
     return ansDict
 
 dct = parse("001")
-print(dct)

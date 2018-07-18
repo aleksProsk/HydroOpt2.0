@@ -37,8 +37,15 @@ from RestrictedPython import compile_restricted_function, safe_builtins, limited
 from pathlib import Path # für inline-io
 from functools import lru_cache # für memoization
 
+from parser import parse
+from compile_callbacks import compile_callbacks
+
 import infix
 import funcy
+
+dictionaryOfAllScreenVariables = {}
+dictionaryOfAllScreenVariables["001"] = {'x': '1'}
+dictionaryOfAllScreenVariables["002"] = {'y': '1'}
 
 @infix.div_infix
 def m(f,x): return list(map(f,x))
@@ -95,14 +102,21 @@ class CRestricted(object):
 	def getID(self): return str(self.__localID) #str(CRestricted.__id)
 	def getNumberOfInstances(): return str(CRestricted.__id)
 	getNumberOfInstances = staticmethod(getNumberOfInstances)
-	def __init__(self, user): 
+	def __init__(self, user, name = None, screenName = None):
 		self.__user = user
 		CRestricted.__id += 1
-		self.__localID = CRestricted.__id
+		if name is None and screenName is None:
+			self.__localID = CRestricted.__id
+		else:
+			self.__localID = name + '-' + self.__class__.__name__ + '-' + screenName
+		print('name: ', name)
+		print('screenName: ', screenName)
+		print('classname: ', self.__class__.__name__)
+		print('id: ', self.__localID)
 	def getUser(self): return self.__user
 
 class CHydropt(CRestricted):
-	def __init__(self, user): 
+	def __init__(self, user):
 		super().__init__(user)
 		self.__assetNames = {
 			'Alperia-VSM': 'Valle Selva Meloni',
@@ -127,7 +141,7 @@ class CSafeNP(CRestricted):
 	def size(self, v) : return v.size
 
 class CSafeDict(CRestricted):
-	def __init__(self, dict, user=CUser()): 
+	def __init__(self, dict, user=CUser()):
 		super().__init__(user)
 		self.__d = dict
 	def get(self, s): return self.__d[s]
@@ -154,8 +168,8 @@ class CSafeLog(CRestricted):
 	def print(self,s): print(s)
 	
 class CGUIComponent(CRestricted):
-	def __init__(self): 
-		super().__init__(CUser())
+	def __init__(self, name, screenName):
+		super().__init__(CUser(), name, screenName)
 		self.__children = []
 	def getChildren(self): return self.__children
 	def appendChild(self, c): self.__children.append(c)
@@ -169,8 +183,9 @@ class CDashComponent(CGUIComponent):
 	def aChild(self,c): self.appendChild(c)
 	
 class CFrame(CDashComponent): #todo: eindeutiger id-parameter 
-	def __init__(self, sCaption, type = 'frame', isDynamic = True, width = 0.25, height = 0, smallScreenFactor = 2, tinyScreenFactor = 4, captionType = html.H2): 
-		super().__init__()
+	def __init__(self, sCaption, type = 'frame', isDynamic = True, width = 0.25, height = 0, smallScreenFactor = 2,
+                 tinyScreenFactor = 4, captionType = html.H2, name = None, screenName = None):
+		super().__init__(name, screenName)
 		self._captionType = captionType
 		self._caption = sCaption
 		self._width = width
@@ -184,24 +199,24 @@ class CFrame(CDashComponent): #todo: eindeutiger id-parameter
 	def setCaption(self, sCaption): super().setDashRendering(html.Div(className = self._type, children = [self._captionType(sCaption, className = 'frame-caption')]))
 
 class CNavigationPane(CDashComponent): 
-	def __init__(self, nestedLinkList): 
-		super().__init__()
+	def __init__(self, nestedLinkList, name = None, screenName = None):
+		super().__init__(name, screenName)
 		self.setNavigationTree(nestedLinkList)
 	def getNavigationTree(self): return self.__nestedLinkList
-	def setNavigationTree(self, nestedLinkList): 
+	def setNavigationTree(self, nestedLinkList):
 		self.__nestedLinkList = nestedLinkList
 		#nestedLinkList = [['Screens', [['Result overview', 'url'], ['Engine results', 'url']]], ['Assets', [['VSM', 'url'], ['NdD', 'url']]]]
 		linkRendering =  flatten((lambda x: [html.P(str(x[0])+': ', className = 'no-break'), (lambda y: html.A(html.Button(y[0], className=y[2]), href=y[1])) /m/ x[1]]) /m/ nestedLinkList)
 		super().setDashRendering(html.Div(className = 'navigation-pane', children = linkRendering))
 	
 class CPage(CFrame): #todo: eindeutiger id-parameter 
-	def __init__(self, sCaption): 
-		super().__init__(sCaption, type = 'content', isDynamic = False, captionType = html.H1)
+	def __init__(self, sCaption, name = None, screenName = None):
+		super().__init__(sCaption, type = 'content', isDynamic = False, captionType = html.H1, name = name, screenName = screenName)
 		
 		
 class CText(CDashComponent):
-	def __init__(self, text): 
-		super().__init__()
+	def __init__(self, text, name = None, screenName = None):
+		super().__init__(name, screenName)
 		self.setText(text)
 	def getText(self): return self.__text
 	def setText(self, text): 
@@ -209,13 +224,13 @@ class CText(CDashComponent):
 		super().setDashRendering(html.P(str(text), className = 'text', id=str(super().getID())))  
 		
 class CStopWaitingForGraphics(CDashComponent):
-	def __init__(self): 
-		super().__init__()
+	def __init__(self, name = None, screenName = None):
+		super().__init__(name, screenName)
 		super().setDashRendering(html.P("", className = 'CStopWaitingForGraphics'))	
 
 class CNumber(CText):
-	def __init__(self, value, unit):
-		super().__init__(str(value) + " " + unit)
+	def __init__(self, value, unit, name = None, screenName = None):
+		super().__init__(str(value) + " " + unit, name = name, screenName = screenName)
 		self.__value = value
 		self.__unit = unit
 		self.setValue(value, unit)
@@ -227,15 +242,15 @@ class CNumber(CText):
 		self.__unit = unit
 		
 class CNumbers(CText):
-	def __init__(self, keys_values_units, separator = '│'):
+	def __init__(self, keys_values_units, separator = '│', name = None, screenName = None):
 		self.__keys_values_units = keys_values_units
 		self.__separator = separator
-		super().__init__(self._getText())
+		super().__init__(self._getText(), name = name, screenName = screenName)
 	def _getText(self): return (' ' + self.__separator + ' ').join((lambda x: x[0] + ': ' + str(x[1]) + ' ' + x[2]) /m/ self.__keys_values_units)
 	
 class CDataTable(CDashComponent):
-	def __init__(self, rows, headers): 
-		super().__init__()
+	def __init__(self, rows, headers, name = None, screenName = None):
+		super().__init__(name, screenName)
 		self.__np = CSafeNP(super().getUser())
 		self.__df = CSafeDF(super().getUser())
 		self.setTable(rows, headers)
@@ -282,8 +297,9 @@ BASIC_GRAPH_LAYOUT = dict(
 )
 
 class CChart(CDashComponent):
-	def __init__(self, rows, headers, rowCaptions, title, type='bar', barmode='group'): 
-		super().__init__()
+	def __init__(self, rows, headers, rowCaptions, title, type='bar', barmode='group',
+                 name = None, screenName = None):
+		super().__init__(name, screenName)
 		self.setChart(rows, headers, rowCaptions, title, type, barmode)
 	def getRows(self): return self.__rows
 	def getHeaders(self): return self.__headers
@@ -324,28 +340,13 @@ class CChart(CDashComponent):
 		self._setFigure()
 		chart = dcc.Graph(id=super().getID(), figure=self._getFigure())
 		super().setDashRendering(chart)
-		
-def update_output_A(start_date, end_date):
-	print("callb")
-	string_prefix = 'You have selected: '
-	if start_date is not None:
-		start_date = datetime.strptime(start_date, '%Y-%m-%d')
-		start_date_string = start_date.strftime('%B %d, %Y')
-		string_prefix = string_prefix + 'Start Date: ' + start_date_string + ' | '
-	if end_date is not None:
-		end_date = datetime.strptime(end_date, '%Y-%m-%d')
-		end_date_string = end_date.strftime('%B %d, %Y')
-		string_prefix = string_prefix + 'End Date: ' + end_date_string
-	if len(string_prefix) == len('You have selected: '):
-		return 'Select a date to see it displayed here'
-	else:
-		return string_prefix
-			
 
 class CDatePicker(CDashComponent):
 	#Initialising function
-	def __init__(self, callb=update_output_A, output=None, outputParam='children', minDate=(1995, 8, 5), maxDate=(2017, 9, 19), startDate=(2017, 8, 5), endDate=(2017, 8, 25), retrieveOldValue=False): 
-		super().__init__()
+	def __init__(self, callb=[], output=None, outputParam='children', minDate=(1995, 8, 5),
+                 maxDate=(2017, 9, 19), startDate=(2017, 8, 5), endDate=(2017, 8, 25), retrieveOldValue=False,
+                 name = None, screenName = None):
+		super().__init__(name, screenName)
 		self.setDatePicker(callb, output, outputParam, minDate, maxDate, startDate, endDate)
 	#Updating function. It is called every time user changes the time range to store current information about date range
 	def internal_update(self):
@@ -354,7 +355,6 @@ class CDatePicker(CDashComponent):
 				self.__start_date = start_date
 			if end_date is not None:
 				self.__end_date = end_date
-			print('lol')
 		return changeData
 	#Wrapper to get the layout of object
 	def getRendering(self): return self.__rendering
@@ -365,23 +365,19 @@ class CDatePicker(CDashComponent):
 			outp = 'none-' + str(super().getID())
 		else:
 			outp = self.__output.getID()
-		print(self.__output.getID())
-		print(self.__outputParam)
-		print(super().getID())
 		return (
 			Output(str(outp), self.__outputParam),
-			[Input('my-date-picker-range-' + str(super().getID()), 'start_date'),
-			 Input('my-date-picker-range-' + str(super().getID()), 'end_date')])
+			[Input('date-picker-range-' + str(super().getID()), 'start_date'),
+			 Input('date-picker-range-' + str(super().getID()), 'end_date')])
 	def __getFakeCallbDecorator(self):
 		return (
 		Output('fake-container-' + str(super().getID()), 'children'),
-		[Input('my-date-picker-range-' + str(super().getID()), 'start_date'),
-		 Input('my-date-picker-range-' + str(super().getID()), 'end_date')])
+		[Input('date-picker-range-' + str(super().getID()), 'start_date'),
+		 Input('date-picker-range-' + str(super().getID()), 'end_date')])
 	#Wrapper for a callback function
 	def getCallback(self): return self.__cb
 	#Creating callbacks for object
 	def __registerCallb(self):
-		print('register callbacks in datepicker')
 		dash_app.callback(*self.__getFakeCallbDecorator())(self.internal_update())
 		#dash_app.callback(*self.__getCallbDecorator())(self.getCallback())
 	#Function to receive the date range
@@ -394,7 +390,7 @@ class CDatePicker(CDashComponent):
 		self.__output = output
 		self.__outputParam = outputParam
 		super().setDashRendering(html.Div([dcc.DatePickerRange(
-			id='my-date-picker-range-' + str(super().getID()),
+			id='date-picker-range-' + str(super().getID()),
 			min_date_allowed=datetime(*minDate),
 			max_date_allowed=datetime(*maxDate),
 			initial_visible_month=datetime(*startDate),
@@ -402,7 +398,6 @@ class CDatePicker(CDashComponent):
 			start_date=datetime(*startDate).date()),
 			html.Div(id='fake-container-' + str(super().getID()), style={'display':'none'})]))
 		#self.__registerCallb()
-		print(self.__outputParam)
 
 @lru_cache(maxsize=32)
 def crf_mem(body, name): return compile_restricted_function(p = '', body = body, name = name, filename = '<inline code>')
@@ -415,14 +410,11 @@ def load_script(scriptpath, additional_globals, safe_locals, name):
 	exec(cr.code, safe_globals, safe_locals)
 	return safe_locals[name]
 
-class HDict(dict): 
+class HDict(dict):
 	def __hash__(self): return hash(str(self))#hash(frozenset(self.items()))  #hashable dictionary
-	
+
 def CreateObjectWithScreeName(o, scName, **args):
-	print(scName)
-	print(args)
-	print(o)
-	return o(args)
+	return o(**args['args'][0], screenName=scName)
 
 #@lru_cache(maxsize=32) todo führt dazu, dass seite nicht neu geladen wird
 def load_script_uid(scriptpath, name, uid, args):
@@ -603,29 +595,27 @@ def dash_router(inits, url=''):
 		print("render-pointer is none")
 	return children
 #http://localhost:5000/d/DisplayScreen@screen=ResultOverview&asset=Alperia-VSM
-#http://localhost:5000/d/DisplayScreen@screen=test
-	
-'''
-dash_app.callback( 
-	Output('12', 'children'),
-	[Input('my-date-picker-range-' + str("13"), 'start_date'),
-	Input('my-date-picker-range-' + str("13"), 'end_date')])(update_output_A)
-	
-	
-dash_app.callback( 
-	Output('StaticOutputDivId', 'children'),
-	[Input('StaticInputDivId', 'll')])(dashOutputRouter)
-	
-def dashOutputRouter(x):
-	x => (f, args)
-	f(args) => y => divifiedy
-	return divifiedy
-'''
+#http://localhost:5000/d/DisplayScreen@screen=test&asset=Alperia-VSM
 
-'''
-@dash_app.callback(Output('fake-container-' + str(13), 'children'),
-		[Input('my-date-picker-range-' + str(13), 'start_date'),
-		 Input('my-date-picker-range-' + str(13), 'end_date')])
-def tmp(a, b):
-	print('lol')
-'''
+def getScreenVariables(user):
+	def getScreenVariablesForUser():
+		return dictionaryOfAllScreenVariables[user]
+	return getScreenVariablesForUser
+
+interactionsDict = parse("001")
+callbackFunctions = compile_callbacks("001", getScreenVariables("002"))
+
+for interaction in interactionsDict:
+	inputLst = []
+	for input in interaction['input']:
+		inputId = input['object'] + '-' + input['type'] + '-' + interaction['screen']
+		if input['type'] == 'CDatePicker':
+			inputLst.append(Input('date-picker-range-' + inputId, 'start_date'))
+			inputLst.append(Input('date-picker-range-' + inputId, 'end_date'))
+		else:
+			inputLst.append(Input(inputId, 'value'))
+	outputId = interaction['output']['object'] + '-' + interaction['output']['type'] + '-' + interaction['screen']
+	dash_app.callback(
+		Output(outputId, interaction['output']['param']),
+		inputLst
+	)(callbackFunctions[interaction['screen']][interaction['callback']])

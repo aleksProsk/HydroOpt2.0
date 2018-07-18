@@ -10,5 +10,5 @@ d = [{
             'type': 'CDatePicker',
         }
     ],
-    'callback': 'nameOfFunction',
+    'callback': 'simpleExample',
 },]

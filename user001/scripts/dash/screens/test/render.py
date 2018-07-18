@@ -6,14 +6,12 @@ myWaitStopper = CStopWaitingForGraphics()
 myFrame.aChild(myText)
 myFrame.aChild(myWaitStopper)
 
-myOutput = CText("Here would be selected date range!")
-myDatePicker = CDatePicker(output=myOutput)
+myOutput = Create(CText, {'name': 'myOutput', 'text':'Here would be selected date range!'})
+myDatePicker = Create(CDatePicker, {'name' : 'myDatePicker', 'output': 'myOutput'})
 myFrame.aChild(myDatePicker)
 myFrame.aChild(myOutput)
 
 log.print(myDatePicker.getSelectedRange())
-
-mya = Create(CDatePicker, {'name': 'mya', 'outputParam':'children'})
 
 myScreen = CPage('Test')
 myScreen.aChild(myFrame)
