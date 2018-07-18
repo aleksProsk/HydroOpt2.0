@@ -126,6 +126,12 @@ class CRestricted(object):
 			self.__localID = CRestricted.__id
 		else:
 			self.__localID = generateId(name, self.__class__.__name__, screenName)
+			cur_uid = str(self.getUser().getUID())
+			if cur_uid not in dictionaryOfAllScreenVariables:
+				dictionaryOfAllScreenVariables[cur_uid] = {}
+			if screenName not in dictionaryOfAllScreenVariables[cur_uid]:
+				dictionaryOfAllScreenVariables[cur_uid][screenName] = CSafeDict({})
+			dictionaryOfAllScreenVariables[cur_uid][screenName].set(name, self)
 		print('name: ', name)
 		print('screenName: ', screenName)
 		print('classname: ', self.__class__.__name__)
@@ -235,15 +241,9 @@ class CPage(CFrame): #todo: eindeutiger id-parameter
 class CText(CDashComponent):
 	def __init__(self, text, name = None, screenName = None):
 		super().__init__(name, screenName)
-		self.setText(text)
-		cur_uid = str(super().getUser().getUID())
-		if cur_uid not in dictionaryOfAllScreenVariables:
-			dictionaryOfAllScreenVariables[cur_uid] = {}
-		if screenName not in dictionaryOfAllScreenVariables[cur_uid]:
-			dictionaryOfAllScreenVariables[cur_uid][screenName] = CSafeDict({})
-		dictionaryOfAllScreenVariables[cur_uid][screenName].set(name, self)
+		self.update(text)
 	def getText(self): return self.__text
-	def setText(self, text): 
+	def update(self, text):
 		self.__text = text
 		super().setDashRendering(html.P(str(text), className = 'text', id=str(super().getID())))
 		
@@ -257,11 +257,11 @@ class CNumber(CText):
 		super().__init__(str(value) + " " + unit, name = name, screenName = screenName)
 		self.__value = value
 		self.__unit = unit
-		self.setValue(value, unit)
+		self.update(value, unit)
 	def getValue(self): return self.__value
-	def setValue(self, value, unit=None): 
+	def update(self, value, unit=None):
 		if unit is None: unit=self.__unit
-		super().setText(str(value) + " " + unit)
+		super().update(str(value) + " " + unit)
 		self.__value = value
 		self.__unit = unit
 		
@@ -371,12 +371,6 @@ class CDatePicker(CDashComponent):
 				 retrieveOldValue=False, name = None, screenName = None):
 		super().__init__(name, screenName)
 		self.setDatePicker(minDate, maxDate, startDate, endDate)
-		cur_uid = str(super().getUser().getUID())
-		if cur_uid not in dictionaryOfAllScreenVariables:
-			dictionaryOfAllScreenVariables[cur_uid] = {}
-		if screenName not in dictionaryOfAllScreenVariables[cur_uid]:
-			dictionaryOfAllScreenVariables[cur_uid][screenName] = CSafeDict({})
-		dictionaryOfAllScreenVariables[cur_uid][screenName].set(name, self)
 	def update(self, start_date = None, end_date = None):
 		if start_date is not None:
 			self.__start_date = start_date
@@ -595,6 +589,7 @@ def dash_router(inits, url=''):
 	return children
 #http://localhost:5000/d/DisplayScreen@screen=ResultOverview&asset=Alperia-VSM
 #http://localhost:5000/d/DisplayScreen@screen=test&asset=Alperia-VSM
+#http://localhost:5000/d/DisplayScreen@screen=secondTest&asset=Alperia-VSM
 
 def createUpdateCallback(uid, screen):
 	objects = readObjects(uid, screen)
@@ -637,7 +632,7 @@ def createUpdateCallback(uid, screen):
 					else:
 						object.update(end_date = args[i])
 				elif type == 'CText':
-					object.setText(args[i])
+					object.update(args[i])
 			return outputId
 
 # find out all the screen names
@@ -649,8 +644,13 @@ for screen in screenNames:
 
 def getScreenVariables(user, screen):
 	def getScreenVariablesForUser():
-		return dictionaryOfAllScreenVariables[user][screen]
+		print(screen)
+		if user in dictionaryOfAllScreenVariables and screen in dictionaryOfAllScreenVariables[user]:
+			return dictionaryOfAllScreenVariables[user][screen]
+		else:
+			return {}
 	return getScreenVariablesForUser
+
 
 #Extract all the callbacks
 callbackFunctions = {}

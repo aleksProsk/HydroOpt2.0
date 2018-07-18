@@ -1,7 +1,7 @@
 #Simple case: cllback with one input and one output
 def simpleExample(start_date, end_date):
 	string_prefix = 'You have selected: '
-	log.print('called function in test 1')
+	log.print('called function')
 	myDatePicker = getScreenVariables().get('myDatePicker')
 
 	'''

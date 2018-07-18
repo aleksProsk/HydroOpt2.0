@@ -1,0 +1,48 @@
+d = [{
+    'output': {
+        'object': 'myOutput',
+        'param': 'children',
+        'type': 'CText',
+    },
+    'input': [
+        {
+            'object': 'myDatePicker',
+            'type': 'CDatePicker',
+        }
+    ],
+    'callback': 'simpleExample',
+},
+{
+    'output': {
+        'object': 'myOutput1',
+        'param': 'children',
+        'type': 'CText',
+    },
+    'input': [
+        {
+            'object': 'myDatePicker1',
+            'type': 'CDatePicker',
+        }
+    ],
+    'state': [
+        {
+            'object': 'myDatePicker',
+            'type': 'CDatePicker',
+        }
+    ],
+    'callback': 'simpleExample1',
+},
+{
+    'output': {
+        'object': 'textToPress',
+        'param': 'children',
+        'type': 'CText',
+    },
+    'input': [
+        {
+            'object': 'textToPress',
+            'type': 'CText',
+        }
+    ],
+    'callback': 'press',
+}]
