@@ -39,13 +39,11 @@ from functools import lru_cache # für memoization
 
 from parser import parse
 from compile_callbacks import compile_callbacks
-
+from readObjects import readObjects
 import infix
 import funcy
 
 dictionaryOfAllScreenVariables = {}
-dictionaryOfAllScreenVariables["001"] = {'x': '1'}
-dictionaryOfAllScreenVariables["002"] = {'y': '1'}
 
 @infix.div_infix
 def m(f,x): return list(map(f,x))
@@ -74,7 +72,26 @@ def flatten(lis):
 		else:
 			new_lis.append(item)
 	return new_lis
-	
+
+def getScreenNames(uid):
+	path = "user" + uid + "/scripts/dash/screens/"
+	screenNames = []
+	for root, dirs, files in os.walk(path, topdown=False):
+		for name in dirs:
+			screenNames.append(os.path.join(name))
+	return screenNames
+
+def getNameFromId(id):
+	name, type, screen = id.split('-')
+	return name
+
+def getTypeFromId(id):
+	name, type, screen = id.split('-')
+	return type
+
+def generateId(name, type, screen):
+	return name + '-' + type + '-' + screen
+
 print("classdefs...")
 
 def get_current_uid():
@@ -108,7 +125,7 @@ class CRestricted(object):
 		if name is None and screenName is None:
 			self.__localID = CRestricted.__id
 		else:
-			self.__localID = name + '-' + self.__class__.__name__ + '-' + screenName
+			self.__localID = generateId(name, self.__class__.__name__, screenName)
 		print('name: ', name)
 		print('screenName: ', screenName)
 		print('classname: ', self.__class__.__name__)
@@ -146,7 +163,8 @@ class CSafeDict(CRestricted):
 		self.__d = dict
 	def get(self, s): return self.__d[s]
 	def getDict(self): return self.__d
-	
+	def set(self, key, value): self.__d[key] = value
+
 class CSafeDateUtils(CRestricted):
 	def __init__(self, user=CUser()): super().__init__(user)
 	def to_datetime(self,v): return pd.to_datetime(v)
@@ -218,10 +236,16 @@ class CText(CDashComponent):
 	def __init__(self, text, name = None, screenName = None):
 		super().__init__(name, screenName)
 		self.setText(text)
+		cur_uid = str(super().getUser().getUID())
+		if cur_uid not in dictionaryOfAllScreenVariables:
+			dictionaryOfAllScreenVariables[cur_uid] = {}
+		if screenName not in dictionaryOfAllScreenVariables[cur_uid]:
+			dictionaryOfAllScreenVariables[cur_uid][screenName] = CSafeDict({})
+		dictionaryOfAllScreenVariables[cur_uid][screenName].set(name, self)
 	def getText(self): return self.__text
 	def setText(self, text): 
 		self.__text = text
-		super().setDashRendering(html.P(str(text), className = 'text', id=str(super().getID())))  
+		super().setDashRendering(html.P(str(text), className = 'text', id=str(super().getID())))
 		
 class CStopWaitingForGraphics(CDashComponent):
 	def __init__(self, name = None, screenName = None):
@@ -343,61 +367,36 @@ class CChart(CDashComponent):
 
 class CDatePicker(CDashComponent):
 	#Initialising function
-	def __init__(self, callb=[], output=None, outputParam='children', minDate=(1995, 8, 5),
-                 maxDate=(2017, 9, 19), startDate=(2017, 8, 5), endDate=(2017, 8, 25), retrieveOldValue=False,
-                 name = None, screenName = None):
+	def __init__(self, minDate=(1995, 8, 5), maxDate=(2017, 9, 19), startDate=(2017, 8, 5), endDate=(2017, 8, 25),
+				 retrieveOldValue=False, name = None, screenName = None):
 		super().__init__(name, screenName)
-		self.setDatePicker(callb, output, outputParam, minDate, maxDate, startDate, endDate)
-	#Updating function. It is called every time user changes the time range to store current information about date range
-	def internal_update(self):
-		def changeData(start_date, end_date):
-			if start_date is not None:
-				self.__start_date = start_date
-			if end_date is not None:
-				self.__end_date = end_date
-		return changeData
-	#Wrapper to get the layout of object
-	def getRendering(self): return self.__rendering
-	#These are the functions to get decorators for callbacks
-	def __getCallbDecorator(self): 
-		outp = None
-		if self.__output is None:
-			outp = 'none-' + str(super().getID())
-		else:
-			outp = self.__output.getID()
-		return (
-			Output(str(outp), self.__outputParam),
-			[Input('date-picker-range-' + str(super().getID()), 'start_date'),
-			 Input('date-picker-range-' + str(super().getID()), 'end_date')])
-	def __getFakeCallbDecorator(self):
-		return (
-		Output('fake-container-' + str(super().getID()), 'children'),
-		[Input('date-picker-range-' + str(super().getID()), 'start_date'),
-		 Input('date-picker-range-' + str(super().getID()), 'end_date')])
-	#Wrapper for a callback function
-	def getCallback(self): return self.__cb
-	#Creating callbacks for object
-	def __registerCallb(self):
-		dash_app.callback(*self.__getFakeCallbDecorator())(self.internal_update())
-		#dash_app.callback(*self.__getCallbDecorator())(self.getCallback())
-	#Function to receive the date range
+		self.setDatePicker(minDate, maxDate, startDate, endDate)
+		cur_uid = str(super().getUser().getUID())
+		if cur_uid not in dictionaryOfAllScreenVariables:
+			dictionaryOfAllScreenVariables[cur_uid] = {}
+		if screenName not in dictionaryOfAllScreenVariables[cur_uid]:
+			dictionaryOfAllScreenVariables[cur_uid][screenName] = CSafeDict({})
+		dictionaryOfAllScreenVariables[cur_uid][screenName].set(name, self)
+	def update(self, start_date = None, end_date = None):
+		if start_date is not None:
+			self.__start_date = start_date
+		if end_date is not None:
+			self.__end_date = end_date
 	def getSelectedRange(self):
+		#render = self.getDashRendering()
+		#print(render.children)
+		#print(render.children[0]['start_date'])
 		return [self.__start_date, self.__end_date]
-	def setDatePicker(self, callb, output, outputParam, minDate, maxDate, startDate, endDate):
-		self.__cb = callb
+	def setDatePicker(self, minDate, maxDate, startDate, endDate):
 		self.__start_date = datetime(*startDate).date()
 		self.__end_date = datetime(*endDate).date()
-		self.__output = output
-		self.__outputParam = outputParam
 		super().setDashRendering(html.Div([dcc.DatePickerRange(
-			id='date-picker-range-' + str(super().getID()),
+			id=str(super().getID()),
 			min_date_allowed=datetime(*minDate),
 			max_date_allowed=datetime(*maxDate),
 			initial_visible_month=datetime(*startDate),
 			end_date=datetime(*endDate).date(),
-			start_date=datetime(*startDate).date()),
-			html.Div(id='fake-container-' + str(super().getID()), style={'display':'none'})]))
-		#self.__registerCallb()
+			start_date=datetime(*startDate).date())]))
 
 @lru_cache(maxsize=32)
 def crf_mem(body, name): return compile_restricted_function(p = '', body = body, name = name, filename = '<inline code>')
@@ -597,25 +596,91 @@ def dash_router(inits, url=''):
 #http://localhost:5000/d/DisplayScreen@screen=ResultOverview&asset=Alperia-VSM
 #http://localhost:5000/d/DisplayScreen@screen=test&asset=Alperia-VSM
 
-def getScreenVariables(user):
+def createUpdateCallback(uid, screen):
+	objects = readObjects(uid, screen)
+	print(screen)
+	print(objects)
+	inputLst = []
+	stateLst = []
+	for obj in objects:
+		id = generateId(obj['object'], obj['type'], screen)
+		num = 1
+		if obj['type'] == 'CDatePicker':
+			num = 2
+			inputLst.append(Input(id, 'start_date'))
+			inputLst.append(Input(id, 'end_date'))
+		elif obj['type'] == 'CText':
+			inputLst.append(Input(id, 'children'))
+		for i in range(num):
+			stateLst.append(State(id, 'id'))
+	if len(objects) > 0:
+		outputId = generateId(objects[0]['object'], objects[0]['type'], screen)
+		@dash_app.callback(
+			Output(outputId, 'id'),
+			inputLst,
+			stateLst,
+		)
+		def update(*args):
+			print('here')
+			print(args)
+			for i in range(len(args) // 2):
+				if args[i] is None:
+					continue
+				id = args[i + len(args) // 2]
+				type = getTypeFromId(id)
+				name = getNameFromId(id)
+				#### TODO:User Id 0 is hardcoded!!!
+				object = dictionaryOfAllScreenVariables["0"][screen].get(name)
+				if type == 'CDatePicker':
+					if i + len(args) // 2 + 1 < len(args) and args[i + len(args) // 2 + 1] == args[i + len(args) // 2]:
+						object.update(start_date = args[i])
+					else:
+						object.update(end_date = args[i])
+				elif type == 'CText':
+					object.setText(args[i])
+			return outputId
+
+# find out all the screen names
+screenNames = getScreenNames("001")
+
+#Create callbacks for live updates of objects
+for screen in screenNames:
+	createUpdateCallback("001", screen)
+
+def getScreenVariables(user, screen):
 	def getScreenVariablesForUser():
-		return dictionaryOfAllScreenVariables[user]
+		return dictionaryOfAllScreenVariables[user][screen]
 	return getScreenVariablesForUser
 
+#Extract all the callbacks
+callbackFunctions = {}
+for screen in screenNames:
+	callbackFunctions[screen] = compile_callbacks("001", screen, getScreenVariables("0", screen), CSafeLog(None))
+
+#Extract all the interactions
 interactionsDict = parse("001")
-callbackFunctions = compile_callbacks("001", getScreenVariables("002"))
 
 for interaction in interactionsDict:
 	inputLst = []
 	for input in interaction['input']:
-		inputId = input['object'] + '-' + input['type'] + '-' + interaction['screen']
+		inputId = generateId(input['object'], input['type'], interaction['screen'])
 		if input['type'] == 'CDatePicker':
-			inputLst.append(Input('date-picker-range-' + inputId, 'start_date'))
-			inputLst.append(Input('date-picker-range-' + inputId, 'end_date'))
+			inputLst.append(Input(inputId, 'start_date'))
+			inputLst.append(Input(inputId, 'end_date'))
 		else:
-			inputLst.append(Input(inputId, 'value'))
-	outputId = interaction['output']['object'] + '-' + interaction['output']['type'] + '-' + interaction['screen']
+			inputLst.append(Input(inputId, 'n_clicks'))
+	stateLst = []
+	if 'state' in interaction:
+		for state in interaction['state']:
+			stateId = generateId(state['object'], state['type'], interaction['screen'])
+			if state['type'] == 'CDatePicker':
+				stateLst.append(State(stateId, 'start_date'))
+				stateLst.append(State(stateId, 'end_date'))
+			else:
+				stateLst.append(State(stateId, 'value'))
+	outputId = generateId(interaction['output']['object'], interaction['output']['type'], interaction['screen'])
 	dash_app.callback(
 		Output(outputId, interaction['output']['param']),
-		inputLst
+		inputLst,
+		stateLst,
 	)(callbackFunctions[interaction['screen']][interaction['callback']])
