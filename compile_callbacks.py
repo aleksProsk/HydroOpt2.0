@@ -2,6 +2,10 @@ import os
 from RestrictedPython import compile_restricted
 from RestrictedPython import safe_builtins
 from datetime import date, timedelta, datetime
+import base64
+
+def split(c, s):
+    return s.split(c)
 
 def compile_callbacks_file(source_code, getScreenVariables, log):
     locals = {}
@@ -11,7 +15,7 @@ def compile_callbacks_file(source_code, getScreenVariables, log):
         mode = 'exec'
     )
     additional_globals = {
-        'date': date, 'timedelta': timedelta, 'datetime': datetime, 'getScreenVariables': getScreenVariables, 'log': log
+        'date': date, 'timedelta': timedelta, 'datetime': datetime, 'getScreenVariables': getScreenVariables, 'log': log, 'decodeFile': base64.b64decode, 'split': split
     }
     safe_globals = safe_builtins
     safe_globals.update(additional_globals)

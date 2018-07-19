@@ -7,7 +7,7 @@ d = [{
     'input': [
         {
             'object': 'myDatePicker',
-            'type': 'CDatePicker',
+            'type': 'CDatePickerRange',
         }
     ],
     'callback': 'simpleExample',
@@ -21,13 +21,13 @@ d = [{
     'input': [
         {
             'object': 'myDatePicker1',
-            'type': 'CDatePicker',
+            'type': 'CDatePickerRange',
         }
     ],
     'state': [
         {
             'object': 'myDatePicker',
-            'type': 'CDatePicker',
+            'type': 'CDatePickerRange',
         }
     ],
     'callback': 'simpleExample1',
@@ -45,4 +45,144 @@ d = [{
         }
     ],
     'callback': 'press',
+},
+{
+    'output': {
+        'object': 'dropdownText',
+        'param': 'children',
+        'type': 'CText',
+    },
+    'input': [
+        {
+            'object': 'myDropdown',
+            'type': 'CDropdown',
+        }
+    ],
+    'callback': 'displayValue',
+},
+{
+    'output': {
+        'object': 'sliderText',
+        'param': 'children',
+        'type': 'CText',
+    },
+    'input': [
+        {
+            'object': 'mySlider',
+            'type': 'CSlider',
+        }
+    ],
+    'callback': 'displayValue',
+},
+{
+    'output': {
+        'object': 'rangeSliderText',
+        'param': 'children',
+        'type': 'CText',
+    },
+    'input': [
+        {
+            'object': 'myRangeSlider',
+            'type': 'CRangeSlider',
+        }
+    ],
+    'callback': 'displayValue',
+},
+{
+    'output': {
+        'object': 'inputText',
+        'param': 'children',
+        'type': 'CText',
+    },
+    'input': [
+        {
+            'object': 'myInput',
+            'type': 'CInput',
+        }
+    ],
+    'callback': 'displayValue',
+},
+{
+    'output': {
+        'object': 'textAreaText',
+        'param': 'children',
+        'type': 'CText',
+    },
+    'input': [
+        {
+            'object': 'myTextArea',
+            'type': 'CTextArea',
+        }
+    ],
+    'callback': 'displayValue',
+},
+{
+    'output': {
+        'object': 'checklistText',
+        'param': 'children',
+        'type': 'CText',
+    },
+    'input': [
+        {
+            'object': 'myChecklist',
+            'type': 'CChecklist',
+        }
+    ],
+    'callback': 'displayValue',
+},
+{
+    'output': {
+        'object': 'radioItemsText',
+        'param': 'children',
+        'type': 'CText',
+    },
+    'input': [
+        {
+            'object': 'myRadioItems',
+            'type': 'CRadioItems',
+        }
+    ],
+    'callback': 'displayValue',
+},
+{
+    'output': {
+        'object': 'buttonText',
+        'param': 'children',
+        'type': 'CText',
+    },
+    'input': [
+        {
+            'object': 'myButton',
+            'type': 'CButton',
+        }
+    ],
+    'callback': 'displayValue',
+},
+{
+    'output': {
+        'object': 'singleText',
+        'param': 'children',
+        'type': 'CText',
+    },
+    'input': [
+        {
+            'object': 'myDatePicker2',
+            'type': 'CDatePickerSingle',
+        }
+    ],
+    'callback': 'displayValue',
+},
+{
+    'output': {
+        'object': 'uploadText',
+        'param': 'children',
+        'type': 'CText',
+    },
+    'input': [
+        {
+            'object': 'myUpload',
+            'type': 'CUpload',
+        }
+    ],
+    'callback': 'readFile',
 }]

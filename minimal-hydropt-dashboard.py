@@ -32,7 +32,7 @@ from datetime import date, timedelta, datetime
 
 import plotly.graph_objs as go
 
-from RestrictedPython import compile_restricted_function, safe_builtins, limited_builtins, utility_builtins
+from RestrictedPython import compile_restricted_function, safe_builtins, limited_builtins, utility_builtins, compile_restricted
 
 from pathlib import Path # für inline-io
 from functools import lru_cache # für memoization
@@ -42,6 +42,11 @@ from compile_callbacks import compile_callbacks
 from readObjects import readObjects
 import infix
 import funcy
+import base64
+import io
+
+def safeSplit(separator, string, num):
+    return string.split(separator)[num]
 
 dictionaryOfAllScreenVariables = {}
 
@@ -90,6 +95,7 @@ def getTypeFromId(id):
 	return type
 
 def generateId(name, type, screen):
+	print(name, type, screen)
 	return name + '-' + type + '-' + screen
 
 print("classdefs...")
@@ -132,6 +138,7 @@ class CRestricted(object):
 			if screenName not in dictionaryOfAllScreenVariables[cur_uid]:
 				dictionaryOfAllScreenVariables[cur_uid][screenName] = CSafeDict({})
 			dictionaryOfAllScreenVariables[cur_uid][screenName].set(name, self)
+			print('Added ', name, ' to dict with uid = ', cur_uid, ' screen = ', screenName)
 		print('name: ', name)
 		print('screenName: ', screenName)
 		print('classname: ', self.__class__.__name__)
@@ -365,32 +372,338 @@ class CChart(CDashComponent):
 		chart = dcc.Graph(id=super().getID(), figure=self._getFigure())
 		super().setDashRendering(chart)
 
-class CDatePicker(CDashComponent):
+class CDatePickerRange(CDashComponent):
 	#Initialising function
-	def __init__(self, minDate=(1995, 8, 5), maxDate=(2017, 9, 19), startDate=(2017, 8, 5), endDate=(2017, 8, 25),
-				 retrieveOldValue=False, name = None, screenName = None):
+	def __init__(self, minDate = (1995, 8, 5), maxDate = (2017, 9, 19), startDate = (2017, 8, 5), endDate = (2017, 8, 25),
+				 name = None, screenName = None):
 		super().__init__(name, screenName)
-		self.setDatePicker(minDate, maxDate, startDate, endDate)
+		self.setDatePickerRange(minDate, maxDate, startDate, endDate)
 	def update(self, start_date = None, end_date = None):
 		if start_date is not None:
 			self.__start_date = start_date
 		if end_date is not None:
 			self.__end_date = end_date
 	def getSelectedRange(self):
-		#render = self.getDashRendering()
-		#print(render.children)
-		#print(render.children[0]['start_date'])
 		return [self.__start_date, self.__end_date]
-	def setDatePicker(self, minDate, maxDate, startDate, endDate):
+	def setDatePickerRange(self, minDate, maxDate, startDate, endDate):
 		self.__start_date = datetime(*startDate).date()
 		self.__end_date = datetime(*endDate).date()
-		super().setDashRendering(html.Div([dcc.DatePickerRange(
+		super().setDashRendering(dcc.DatePickerRange(
 			id=str(super().getID()),
 			min_date_allowed=datetime(*minDate),
 			max_date_allowed=datetime(*maxDate),
 			initial_visible_month=datetime(*startDate),
 			end_date=datetime(*endDate).date(),
-			start_date=datetime(*startDate).date())]))
+			start_date=datetime(*startDate).date())
+		)
+
+class CDatePickerSingle(CDashComponent):
+	def __init__(self, minDate=(1995, 8, 5), maxDate = (2017, 9, 19), date = (2017, 8, 5),
+				 name = None, screenName = None):
+		super().__init__(name, screenName)
+		self.setDatePickerSingle(minDate, maxDate, date)
+	def getValue(self):
+		return self.__date
+	def update(self, date = None):
+		if date is not None:
+			self.__date = date
+	def setDatePickerSingle(self, minDate, maxDate, date):
+		self.__minDate = datetime(*minDate).date()
+		self.__maxDate = datetime(*maxDate).date()
+		self.__date = datetime(*date).date()
+		super().setDashRendering(dcc.DatePickerSingle(
+			id=str(super().getID()),
+			min_date_allowed=datetime(*minDate),
+			max_date_allowed=datetime(*maxDate),
+			initial_visible_month=datetime(*date),
+			date=datetime(*date).date())
+		)
+
+class CDropdown(CDashComponent):
+	def __init__(self, options = [], placeholder = 'Select', value = '', multi = False,
+				 name = None, screenName = None, height = 'auto', width = 'auto'):
+		super().__init__(name, screenName)
+		self.setDropdown(options, placeholder, value, multi, height, width)
+	def getValue(self):
+		return self.__value
+	def update(self, value):
+		self.__value = value
+	def setDropdown(self, options, placeholder, value, multi, height, width):
+		self.__options = options
+		self.__placeholder = placeholder
+		self.__value = value
+		self.__multi = multi
+		self.__height = height
+		self.__width = width
+		st = {'height': height, 'width': width}
+		super().setDashRendering(html.Div([dcc.Dropdown(
+			id=str(super().getID()),
+			options=options,
+			placeholder=placeholder,
+			multi=multi,
+			value=value,
+		)], style=st))
+
+class CSlider(CDashComponent):
+	def __init__(self, dots = False, marks = {}, min = 0, max = 100, step = 1, value = None, vertical = False,
+				 name = None, screenName = None, height = 'auto', width = 'auto'):
+		if value is None:
+			value = max
+		super().__init__(name, screenName)
+		self.setSlider(dots, marks, min, max, step, value, vertical, height, width)
+	def getValue(self):
+		return self.__value
+	def update(self, value):
+		self.__value = value
+	def setSlider(self, dots, marks, min, max, step, value, vertical, height, width):
+		self.__dots = dots
+		self.__marks = marks
+		self.__min = min
+		self.__max = max
+		self.__step = step
+		self.__value = value
+		self.__vertical = vertical
+		self.__height = height
+		self.__width = width
+		st = {'height': height, 'width': width}
+		super().setDashRendering(html.Div([dcc.Slider(
+			id=str(super().getID()),
+			dots=dots,
+			marks=marks,
+			min=min,
+			max=max,
+			step=step,
+			value=value,
+			vertical=vertical,
+		)], style=st))
+
+class CRangeSlider(CDashComponent):
+	def __init__(self, allowCross = False, dots = False, marks = {}, min = 0, max = 100, step = 1, value = None, pushable = False, vertical = False,
+				 name = None, screenName = None, height = 'auto', width = 'auto'):
+		if value is None:
+			value = max
+		super().__init__(name, screenName)
+		self.setRangeSlider(allowCross, dots, marks, min, max, step, value, pushable, vertical, height, width)
+	def getValue(self):
+		return self.__value
+	def update(self, value):
+		self.__value = value
+	def setRangeSlider(self, allowCross, dots, marks, min, max, step, value, pushable, vertical, height, width):
+		self.__allowCross = allowCross
+		self.__dots = dots
+		self.__marks = marks
+		self.__min = min
+		self.__max = max
+		self.__step = step
+		self.__value = value
+		self.__pushable = pushable
+		self.__vertical = vertical
+		self.__height = height
+		self.__width = width
+		st = {'height': height, 'width': width}
+		super().setDashRendering(html.Div([dcc.RangeSlider(
+			id=str(super().getID()),
+			allowCross=allowCross,
+			dots=dots,
+			marks=marks,
+			min=min,
+			max=max,
+			step=step,
+			value=value,
+			pushable=pushable,
+			vertical=vertical,
+		)], style=st))
+
+class CInput(CDashComponent):
+	def __init__(self, list = [], min = None, max = None, maxlength = -1, placeholder = 'Input field',
+				 readonly = False, style = {}, type = 'text', value = None, height = 'auto', width = 'auto',
+				 name = None, screenName = None):
+		super().__init__(name, screenName)
+		self.setInput(list, min, max, maxlength, placeholder, readonly, style, type, value, height, width)
+	def getValue(self):
+		return self.__value
+	def update(self, value):
+		self.__value = value
+	def setInput(self, list, min, max, maxlength, placeholder, readonly, style, type, value, height, width):
+		self.__list = list
+		self.__min = min
+		self.__max = max
+		self.__maxlength = maxlength
+		self.__placeholder = placeholder
+		self.__readonly = readonly
+		self.__type = type
+		self.__value = value
+		self.__height = height
+		self.__width = width
+		style['height'] = height
+		style['width'] = width
+		self.__style = style
+		super().setDashRendering(dcc.Input(
+			id=str(super().getID()),
+			name=str(super().getID()),
+			list=list,
+			min=min,
+			max=max,
+			maxlength=maxlength,
+			placeholder=placeholder,
+			readonly=readonly,
+			style=style,
+			type=type,
+			value=value,
+		))
+
+class CTextArea(CDashComponent):
+	def __init__(self, cols = 20, contentEditable = True, disabled = False, draggable = False, maxLength = -1, minLength = -1,
+				 placeholder = 'Enter text', readonly = False, rows = 20, style = {}, title = '', value = None,
+				 name = None, screenName = None, height = 'auto', width = 'auto'):
+		super().__init__(name, screenName)
+		self.setTextArea(cols, contentEditable, disabled, draggable, maxLength, minLength, placeholder, readonly, rows, style, title, value, height, width)
+	def update(self, value):
+		self.__value = value
+	def getValue(self):
+		return self.__value
+	def setTextArea(self, cols, contentEditable, disabled, draggable, maxLength, minLength, placeholder, readonly, rows, style,title, value, height, width):
+		self.__cols = cols
+		self.__contentEditable = contentEditable
+		self.__disabled = disabled
+		self.__draggable = draggable
+		self.__maxLength = maxLength
+		self.__minLength = minLength
+		self.__placeholder = placeholder
+		self.__readonly = readonly
+		self.__rows = rows
+		self.__title = title
+		self.__value = value
+		self.__height = height
+		self.__width = width
+		style['height'] = height
+		style['width'] = width
+		self.__style = style
+		super().setDashRendering(dcc.Textarea(
+			id=str(super().getID()),
+			name=str(super().getID()),
+			cols=cols,
+			contentEditable=contentEditable,
+			disabled=disabled,
+			draggable=draggable,
+			maxLength=maxLength,
+			minLength=minLength,
+			placeholder=placeholder,
+			readOnly=readonly,
+			rows=rows,
+			title=title,
+			value=value,
+			style=style,
+		))
+
+class CChecklist(CDashComponent):
+	def __init__(self, inputStyle = {}, labelStyle = {}, options = [], style = {}, value = [], height = 'auto', width = 'auto',
+				 name = None, screenName = None):
+		super().__init__(name, screenName)
+		self.setChecklist(inputStyle, labelStyle, options, style, value, height, width)
+	def getValue(self):
+		return self.__value
+	def update(self, value):
+		self.__value = value
+	def setChecklist(self, inputStyle, labelStyle, options, style, value, height, width):
+		self.__inputStyle = inputStyle
+		self.__labelStyle = labelStyle
+		self.__options = options
+		self.__value = value
+		self.__height = height
+		self.__width = width
+		style['height'] = height
+		style['width'] = width
+		self.__style = style
+		super().setDashRendering(dcc.Checklist(
+			id=str(super().getID()),
+			inputStyle=inputStyle,
+			labelStyle=labelStyle,
+			options=options,
+			style=style,
+			values=value,
+		))
+
+class CRadioItems(CDashComponent):
+	def __init__(self, inputStyle = {}, labelStyle = {}, options = [], style = {}, value = [], height = 'auto', width = 'auto',
+				 name = None, screenName = None):
+		super().__init__(name, screenName)
+		self.setRadioItems(inputStyle, labelStyle, options, style, value, height, width)
+	def getValue(self):
+		return self.__value
+	def update(self, value):
+		self.__value = value
+	def setRadioItems(self, inputStyle, labelStyle, options, style, value, height, width):
+		self.__inputStyle = inputStyle
+		self.__labelStyle = labelStyle
+		self.__options = options
+		self.__value = value
+		self.__height = height
+		self.__width = width
+		style['height'] = height
+		style['width'] = width
+		self.__style = style
+		super().setDashRendering(dcc.RadioItems(
+			id=str(super().getID()),
+			inputStyle=inputStyle,
+			labelStyle=labelStyle,
+			options=options,
+			style=style,
+			value=value,
+		))
+
+class CButton(CDashComponent):
+	def __init__(self, text = 'Button', style = {}, height = 'auto', width = 'auto',
+				 name = None, screenName = None):
+		super().__init__(name, screenName)
+		self.setButton(text, style, height, width)
+	def getValue(self):
+		return self.__value
+	def update(self, value):
+		self.__value = value
+	def setButton(self, text, style, height, width):
+		self.__text = text
+		style['height'] = height
+		style['width'] = width
+		self.__style = style
+		self.__height = height
+		self.__width = width
+		self.__value = 0
+		self.setDashRendering(html.Button(
+			text,
+			id=str(super().getID()),
+			name=str(super().getID()),
+			style=style,
+		))
+
+#TODO: Add feature of multiple file upload!!!
+class CUpload(CDashComponent):
+	def __init__(self, text = 'Drag and Drop or Select a File', max_size = -1, multiple = False, style = {}, height = 'auto', width = 'auto',
+				 name = None, screenName = None):
+		super().__init__(name, screenName)
+		self.setUpload(text, max_size, multiple, style, height, width)
+	def getValue(self):
+		return [self.__filename, self.__contents]
+	def update(self, contents = None, filename = None):
+		if contents is not None:
+			self.__contents = contents
+		if filename is not None:
+			self.__filename = filename
+	def setUpload(self, text, max_size, multiple, style, height, width):
+		self.__max_size = max_size
+		self.__multiple = multiple
+		style['height'] = height
+		style['width'] = width
+		self.__style = style
+		self.__filename = None
+		self.__contents = None
+		super().setDashRendering(dcc.Upload(
+			[text],
+			id=str(super().getID()),
+			max_size=max_size,
+			multiple=multiple,
+			style=style,
+		))
 
 @lru_cache(maxsize=32)
 def crf_mem(body, name): return compile_restricted_function(p = '', body = body, name = name, filename = '<inline code>')
@@ -407,6 +720,8 @@ class HDict(dict):
 	def __hash__(self): return hash(str(self))#hash(frozenset(self.items()))  #hashable dictionary
 
 def CreateObjectWithScreeName(o, scName, **args):
+	print(args['args'][0])
+	print(scName)
 	return o(**args['args'][0], screenName=scName)
 
 #@lru_cache(maxsize=32) todo führt dazu, dass seite nicht neu geladen wird
@@ -428,7 +743,17 @@ def load_script_uid(scriptpath, name, uid, args):
 		'CText': CText,
 		'CStopWaitingForGraphics': CStopWaitingForGraphics,
 		'CNumbers': CNumbers,
-		'CDatePicker': CDatePicker,
+		'CDatePickerRange': CDatePickerRange,
+		'CDatePickerSingle': CDatePickerSingle,
+		'CDropdown': CDropdown,
+		'CSlider': CSlider,
+		'CRangeSlider': CRangeSlider,
+		'CInput': CInput,
+		'CTextArea': CTextArea,
+		'CChecklist': CChecklist,
+		'CRadioItems': CRadioItems,
+		'CButton': CButton,
+		'CUpload': CUpload,
 		'Create': lambda o, *a: CreateObjectWithScreeName(o=o, scName=args['screen'], args=a),
 		'args':CSafeDict(args, user=user)}
 	return load_script(scriptpath, globals, {}, name)
@@ -593,19 +918,39 @@ def dash_router(inits, url=''):
 
 def createUpdateCallback(uid, screen):
 	objects = readObjects(uid, screen)
-	print(screen)
-	print(objects)
 	inputLst = []
 	stateLst = []
 	for obj in objects:
 		id = generateId(obj['object'], obj['type'], screen)
 		num = 1
-		if obj['type'] == 'CDatePicker':
+		if obj['type'] == 'CDatePickerRange':
 			num = 2
 			inputLst.append(Input(id, 'start_date'))
 			inputLst.append(Input(id, 'end_date'))
+		elif obj['type'] ==  'CDatePickerSingle':
+			inputLst.append(Input(id, 'date'))
 		elif obj['type'] == 'CText':
 			inputLst.append(Input(id, 'children'))
+		elif obj['type'] == 'CDropdown':
+			inputLst.append(Input(id, 'value'))
+		elif obj['type'] == 'CSlider':
+			inputLst.append(Input(id, 'value'))
+		elif obj['type'] == 'CRangeSlider':
+			inputLst.append(Input(id, 'value'))
+		elif obj['type'] == 'CInput':
+			inputLst.append(Input(id,'value'))
+		elif obj['type'] == 'CTextArea':
+			inputLst.append(Input(id, 'value'))
+		elif obj['type'] == 'CChecklist':
+			inputLst.append(Input(id, 'values'))
+		elif obj['type'] == 'CRadioItems':
+			inputLst.append(Input(id, 'value'))
+		elif obj['type'] == 'CButton':
+			inputLst.append(Input(id, 'n_clicks'))
+		elif obj['type'] == 'CUpload':
+			num = 2
+			inputLst.append(Input(id, 'contents'))
+			inputLst.append(Input(id, 'filename'))
 		for i in range(num):
 			stateLst.append(State(id, 'id'))
 	if len(objects) > 0:
@@ -616,8 +961,6 @@ def createUpdateCallback(uid, screen):
 			stateLst,
 		)
 		def update(*args):
-			print('here')
-			print(args)
 			for i in range(len(args) // 2):
 				if args[i] is None:
 					continue
@@ -626,13 +969,37 @@ def createUpdateCallback(uid, screen):
 				name = getNameFromId(id)
 				#### TODO:User Id 0 is hardcoded!!!
 				object = dictionaryOfAllScreenVariables["0"][screen].get(name)
-				if type == 'CDatePicker':
+				if type == 'CDatePickerRange':
 					if i + len(args) // 2 + 1 < len(args) and args[i + len(args) // 2 + 1] == args[i + len(args) // 2]:
 						object.update(start_date = args[i])
 					else:
 						object.update(end_date = args[i])
+				elif type == 'CDatePickerSingle':
+					object.update(args[i])
 				elif type == 'CText':
 					object.update(args[i])
+				elif type == 'CDropdown':
+					object.update(args[i])
+				elif type == 'CSlider':
+					object.update(args[i])
+				elif type == 'CRangeSlider':
+					object.update(args[i])
+				elif type == 'CInput':
+					object.update(args[i])
+				elif type == 'CTextArea':
+					object.update(args[i])
+				elif type == 'CChecklist':
+					object.update(args[i])
+				elif type == 'CRadioItems':
+					object.update(args[i])
+				elif type == 'CButton':
+					object.update(args[i])
+				elif type == 'CUpload':
+					if i + len(args) // 2 + 1 < len(args) and args[i + len(args) // 2 + 1] == args[i + len(args) // 2]:
+						object.update(contents = args[i])
+					else:
+						object.update(filename = args[i])
+			print(outputId)
 			return outputId
 
 # find out all the screen names
@@ -642,6 +1009,7 @@ screenNames = getScreenNames("001")
 for screen in screenNames:
 	createUpdateCallback("001", screen)
 
+'''
 def getScreenVariables(user, screen):
 	def getScreenVariablesForUser():
 		print(screen)
@@ -656,6 +1024,32 @@ def getScreenVariables(user, screen):
 callbackFunctions = {}
 for screen in screenNames:
 	callbackFunctions[screen] = compile_callbacks("001", screen, getScreenVariables("0", screen), CSafeLog(None))
+'''
+callbackFunctions = {}
+for screen in screenNames:
+	path = "user" + "001" + "/scripts/dash/screens/"
+	f = open(path + screen + "/callbacks.py", "r")
+	source_code = f.read()
+	locals = {}
+	byte_code = compile_restricted(
+		source = source_code,
+		filename = '<inline>',
+		mode = 'exec'
+	)
+	#TODO: User Id 0 is hardcoded
+	uid = "0"
+	if uid not in dictionaryOfAllScreenVariables:
+		dictionaryOfAllScreenVariables[uid] = {}
+	if screen not in dictionaryOfAllScreenVariables[uid]:
+		dictionaryOfAllScreenVariables[uid][screen] = CSafeDict({})
+	additional_globals = {
+		'date': date, 'timedelta': timedelta, 'datetime': datetime, 'screenVariables': dictionaryOfAllScreenVariables["0"][screen], 'log': CSafeLog(None), 'screen': screen,
+		'decodeFile': base64.b64decode, 'split': safeSplit, 'pd': pd, 'io': io
+	}
+	safe_globals = safe_builtins
+	safe_globals.update(additional_globals)
+	exec(byte_code, dict(safe_globals), locals)
+	callbackFunctions[screen] = locals
 
 #Extract all the interactions
 interactionsDict = parse("001")
@@ -664,20 +1058,62 @@ for interaction in interactionsDict:
 	inputLst = []
 	for input in interaction['input']:
 		inputId = generateId(input['object'], input['type'], interaction['screen'])
-		if input['type'] == 'CDatePicker':
+		if input['type'] == 'CDatePickerRange':
 			inputLst.append(Input(inputId, 'start_date'))
 			inputLst.append(Input(inputId, 'end_date'))
-		else:
+		elif input['type'] == 'CDatePickerSingle':
+			inputLst.append(Input(inputId, 'date'))
+		elif input['type'] == 'CText':
 			inputLst.append(Input(inputId, 'n_clicks'))
+		elif input['type'] == 'CDropdown':
+			inputLst.append(Input(inputId, 'value'))
+		elif input['type'] == 'CSlider':
+			inputLst.append(Input(inputId, 'value'))
+		elif input['type'] == 'CRangeSlider':
+			inputLst.append(Input(inputId, 'value'))
+		elif input['type'] == 'CInput':
+			inputLst.append(Input(inputId, 'value'))
+		elif input['type'] == 'CTextArea':
+			inputLst.append(Input(inputId, 'value'))
+		elif input['type'] == 'CChecklist':
+			inputLst.append(Input(inputId, 'values'))
+		elif input['type'] == 'CRadioItems':
+			inputLst.append(Input(inputId, 'value'))
+		elif input['type'] == 'CButton':
+			inputLst.append(Input(inputId, 'n_clicks'))
+		elif input['type'] == 'CUpload':
+			inputLst.append(Input(inputId, 'contents'))
+			inputLst.append(Input(inputId, 'filename'))
 	stateLst = []
 	if 'state' in interaction:
 		for state in interaction['state']:
 			stateId = generateId(state['object'], state['type'], interaction['screen'])
-			if state['type'] == 'CDatePicker':
+			if state['type'] == 'CDatePickerRange':
 				stateLst.append(State(stateId, 'start_date'))
 				stateLst.append(State(stateId, 'end_date'))
-			else:
+			elif state['type'] == 'CDatePickerSingle':
+				stateLst.append(State(stateId, 'date'))
+			elif state['type'] == 'CText':
+				stateLst.append(State(stateId, 'children'))
+			elif state['type'] == 'CDropdown':
 				stateLst.append(State(stateId, 'value'))
+			elif state['type'] == 'CSlider':
+				stateLst.append(State(stateId, 'value'))
+			elif state['type'] == 'CRangeSlider':
+				stateLst.append(State(stateId, 'value'))
+			elif state['type'] == 'CInput':
+				stateLst.append(State(steteId, 'value'))
+			elif state['type'] == 'CTextArea':
+				stateLst.append(State(stateId, 'value'))
+			elif state['type'] == 'CChecklist':
+				stateLst.append(State(stateId, 'values'))
+			elif state['type'] == 'CRadioItems':
+				stateLst.append(State(stateId, 'value'))
+			elif state['type'] == 'CButton':
+				stateLst.append(State(stateId, 'n_clicks'))
+			elif state['type'] == 'CUpload':
+				stateLst.append(State(stateId, 'contents'))
+				stateLst.append(State(stateId, 'filename'))
 	outputId = generateId(interaction['output']['object'], interaction['output']['type'], interaction['screen'])
 	dash_app.callback(
 		Output(outputId, interaction['output']['param']),
