@@ -4,6 +4,8 @@ import numpy as np
 from datetime import date, timedelta, datetime
 import copy
 
+import plotly.graph_objs as go
+
 from baseObjects import User
 CUser = User.CUser
 
@@ -87,12 +89,24 @@ class CSafeFigure(CRestricted):
 			self.__figure['data'][num]['y'] = np.append(self.__figure['data'][num]['y'], y)
 		except Exception as e:
 			print('PLEASE ADD ONLY NUMBERS!!!')
-	def setLineType(self, type = 'linear', num = 0, smoothing = 0.65):
-		print(type, num, smoothing)
-		self.__figure['data'][num]['line'] = dict(
-			shape=type,
-			smoothing=smoothing,
-		)
+	def setLineType(self, type = 'linear', num = 0, smoothing = 0.65, deg = 2):
+		print(self.__figure)
+		if type == 'polyfit':
+			z = np.polyfit(self.__figure['data'][num]['x'], self.__figure['data'][num]['y'], deg)
+			f = np.poly1d(z)
+			x_new = np.linspace(np.min(self.__figure['data'][num]['x']), np.max(self.__figure['data'][num]['x']), 50)
+			y_new = f(x_new)
+			self.__figure['data'].append(go.Scatter(
+				x=x_new,
+				y=y_new,
+				mode='lines',
+			))
+			self.__figure['data'][num]['mode'] = 'markers'
+		else:
+			self.__figure['data'][num]['line'] = dict(
+				shape=type,
+				smoothing=smoothing,
+			)
 
 class CSafePoint(CRestricted):
 	def __init__(self, clickData, user=CUser()):

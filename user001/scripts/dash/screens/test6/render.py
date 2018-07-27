@@ -16,12 +16,18 @@ addRow = Create(CButton, {'name': 'addRow', 'text': 'Add row',
                         })
 text = Create(CText, {'name': 'text', 'text': 'Slider for spline smoothing:'})
 slider = Create(CSlider, {'name': 'slider', 'min': 0, 'max': 1.3, 'step': 0.01, 'value': 0.65, 'marks': {0: '0', 0.65: '0.65', 1.3: '1.3'},
+                          'style': {'width': '90%', 'marginBottom': '1%'}})
+
+text1 = Create(CText, {'name': 'text1', 'text': 'Slider for polyfit degree:'})
+slider1 = Create(CSlider, {'name': 'slider1', 'min': 1, 'max': 10, 'step': 1, 'value': 2, 'dots': True, 'marks': {1: '1', 5: '5', 10: '10'},
                           'style': {'width': '90%'}})
 
 inputFrame.aChild(inputTable)
 inputFrame.aChild(addRow)
 inputFrame.aChild(text)
 inputFrame.aChild(slider)
+inputFrame.aChild(text1)
+inputFrame.aChild(slider1)
 
 myFrame.aChild(myChart)
 myFrame.aChild(inputFrame)

@@ -31,6 +31,11 @@ d = [
             'param': 'value',
             'type': 'CSlider',
         },
+        {
+            'object': 'slider1',
+            'param': 'value',
+            'type': 'CSlider',
+        },
     ],
     'callback': 'updateChart',
 },

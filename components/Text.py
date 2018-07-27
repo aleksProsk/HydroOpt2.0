@@ -8,7 +8,7 @@ from components import DashComponent
 CDashComponent = DashComponent.CDashComponent
 
 class CText(CDashComponent):
-    def __init__(self, text, name=None, screenName=None):
+    def __init__(self, text, style = {}, name=None, screenName=None):
         super().__init__(name, screenName)
         self.update(text)
     def getText(self): return self.__text
