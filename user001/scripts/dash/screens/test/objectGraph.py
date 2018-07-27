@@ -7,44 +7,16 @@ d = [{
     'input': [
         {
             'object': 'myDatePicker',
+            'param': 'start_date',
+            'type': 'CDatePickerRange',
+        },
+        {
+            'object': 'myDatePicker',
+            'param': 'end_date',
             'type': 'CDatePickerRange',
         }
     ],
     'callback': 'simpleExample',
-},
-{
-    'output': {
-        'object': 'myOutput1',
-        'param': 'children',
-        'type': 'CText',
-    },
-    'input': [
-        {
-            'object': 'myDatePicker1',
-            'type': 'CDatePickerRange',
-        }
-    ],
-    'state': [
-        {
-            'object': 'myDatePicker',
-            'type': 'CDatePickerRange',
-        }
-    ],
-    'callback': 'simpleExample1',
-},
-{
-    'output': {
-        'object': 'textToPress',
-        'param': 'children',
-        'type': 'CText',
-    },
-    'input': [
-        {
-            'object': 'textToPress',
-            'type': 'CText',
-        }
-    ],
-    'callback': 'press',
 },
 {
     'output': {
@@ -55,6 +27,7 @@ d = [{
     'input': [
         {
             'object': 'myDropdown',
+            'param': 'value',
             'type': 'CDropdown',
         }
     ],
@@ -69,6 +42,7 @@ d = [{
     'input': [
         {
             'object': 'mySlider',
+            'param': 'value',
             'type': 'CSlider',
         }
     ],
@@ -83,6 +57,7 @@ d = [{
     'input': [
         {
             'object': 'myRangeSlider',
+            'param': 'value',
             'type': 'CRangeSlider',
         }
     ],
@@ -97,6 +72,7 @@ d = [{
     'input': [
         {
             'object': 'myInput',
+            'param': 'value',
             'type': 'CInput',
         }
     ],
@@ -111,6 +87,7 @@ d = [{
     'input': [
         {
             'object': 'myTextArea',
+            'param': 'value',
             'type': 'CTextArea',
         }
     ],
@@ -125,6 +102,7 @@ d = [{
     'input': [
         {
             'object': 'myChecklist',
+            'param': 'values',
             'type': 'CChecklist',
         }
     ],
@@ -139,6 +117,7 @@ d = [{
     'input': [
         {
             'object': 'myRadioItems',
+            'param': 'value',
             'type': 'CRadioItems',
         }
     ],
@@ -153,6 +132,7 @@ d = [{
     'input': [
         {
             'object': 'myButton',
+            'param': 'n_clicks',
             'type': 'CButton',
         }
     ],
@@ -166,7 +146,8 @@ d = [{
     },
     'input': [
         {
-            'object': 'myDatePicker2',
+            'object': 'myDatePicker1',
+            'param': 'date',
             'type': 'CDatePickerSingle',
         }
     ],
@@ -181,8 +162,79 @@ d = [{
     'input': [
         {
             'object': 'myUpload',
+            'param': 'contents',
+            'type': 'CUpload',
+        },
+        {
+            'object': 'myUpload',
+            'param': 'filename',
             'type': 'CUpload',
         }
     ],
     'callback': 'readFile',
+},
+{
+    'output': {
+        'object': 'tabsText',
+        'param': 'children',
+        'type': 'CText',
+    },
+    'input': [
+        {
+            'object': 'myTabs',
+            'param': 'value',
+            'type': 'CTabs',
+        }
+    ],
+    'callback': 'displayValue',
+},
+{
+    'output': {
+        'object': 'myDataTable',
+        'param': 'rows',
+        'type': 'CDataTable',
+    },
+    'input': [
+        {
+            'object': 'myUploadTable',
+            'param': 'contents',
+            'type': 'CUpload',
+        },
+        {
+            'object': 'myUploadTable',
+            'param': 'filename',
+            'type': 'CUpload',
+        }
+    ],
+    'callback': 'loadDataTable',
+},
+{
+    'output': {
+        'object': 'outputTable',
+        'param': 'children',
+        'type': 'CText',
+    },
+    'input': [
+        {
+            'object': 'myInputTable',
+            'param': 'rows',
+            'type': 'CDataTable',
+        },
+    ],
+    'callback': 'updateTableContent',
+},
+{
+    'output': {
+        'object': 'persons',
+        'param': 'children',
+        'type': 'CText',
+    },
+    'input': [
+        {
+            'object': 'myInputTable',
+            'param': 'selected_row_indices',
+            'type': 'CDataTable',
+        },
+    ],
+    'callback': 'getPersons',
 }]

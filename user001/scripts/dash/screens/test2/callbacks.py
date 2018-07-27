@@ -1,7 +1,6 @@
 #Simple case: cllback with one input and one output
 def simpleExample(start_date, end_date):
 	string_prefix = 'You have selected: '
-	log.print('called function')
 	myDatePicker = screenVariables.get('myDatePicker')
 	'''
 	if start_date is not None:
@@ -39,18 +38,16 @@ def press(n):
 	l = screenVariables.get('myButton')
 	m = screenVariables.get('myDatePicker2')
 	n = screenVariables.get('myUpload')
+	o = screenVariables.get('myTabs')
+	p = screenVariables.get('myDataTable')
 	return str(a.getSelectedRange()) + ' ' + str(b.getSelectedRange()) + ' ' + str(c.getText()) + ' ' + str(d.getText()) + ' ' + str(e.getValue()) + ' ' + str(f.getValue()) + ' ' + \
 		   str(g.getValue()) + ' ' + str(h.getValue()) + ' ' + str(i.getValue()) + ' ' + str(j.getValue()) + ' ' + str(k.getValue()) + str(l.getValue()) + ' ' + str(m.getValue()) + \
-		   ' ' + str(n.getValue())
-
-def displayValue(value):
-	return value
+		   ' ' + str(n.getValue()) + ' ' + str(o.getValue()) + ' '  + str(p.getValue()) + ' ' + str(p.getData().to_dict('records'))
 
 #TODO:Add feature of multiple files upload!
 def readFile(list_of_contents, filename):
 	if list_of_contents is None:
 		return 'Nothing!'
-	log.print(type(list_of_contents))
 	content_type = split(',', list_of_contents, 0)
 	content_string = split(',', list_of_contents, 1)
 	decoded = decodeFile(content_string)
@@ -59,3 +56,15 @@ def readFile(list_of_contents, filename):
 		return 'File: ' + filename + "\n" + str(df)
 	except Exception as e:
 		return 'File: ' + filename + ' is not .csv file!!!'
+
+def loadDataTable(list_of_contents, filename):
+	if list_of_contents is None:
+		return []
+	content_type = split(',', list_of_contents, 0)
+	content_string = split(',', list_of_contents, 1)
+	decoded = decodeFile(content_string)
+	try:
+		df = pd.read_csv(io.StringIO(decoded.decode('ISO-8859-1')))
+		return df.to_dict('records')
+	except Exception as e:
+		return [{'Error': 'file is not .csv'}]

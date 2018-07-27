@@ -99,4 +99,28 @@ objects = [
         'object': 'uploadText',
         'type': 'CText',
     },
+    {
+        'object': 'myTabs',
+        'type': 'CTabs',
+    },
+    {
+        'object': 'tabsText',
+        'type': 'CText',
+    },
+    {
+        'object': 'myUploadTable',
+        'type': 'CUpload',
+    },
+    {
+        'object': 'myDataTable',
+        'type': 'CDataTable',
+    },
+    {
+        'object': 'myPieChart',
+        'type': 'CPieChart',
+    },
+    {
+        'object': 'myImg',
+        'type': 'CImage',
+    },
 ]

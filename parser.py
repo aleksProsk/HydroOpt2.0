@@ -22,7 +22,7 @@ def parse(uid):
             screenNames.append(os.path.join(name))
     ansDict = []
     for screenName in screenNames:
-        f = open(path + screenName + "/objectGraph.txt", "r")
+        f = open(path + screenName + "/objectGraph.py", "r")
         s = f.read()
         curDict = readDict(s)
         for elem in curDict:

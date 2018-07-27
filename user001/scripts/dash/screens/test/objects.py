@@ -4,19 +4,15 @@ objects = [
         'type': 'CText',
     },
     {
-        'object': 'myOutput1',
-        'type': 'CText',
-    },
-    {
         'object': 'myDatePicker',
         'type': 'CDatePickerRange',
     },
     {
         'object': 'myDatePicker1',
-        'type': 'CDatePickerRange',
+        'type': 'CDatePickerSingle',
     },
     {
-        'object': 'textToPress',
+        'object': 'singleText',
         'type': 'CText',
     },
     {
@@ -84,19 +80,39 @@ objects = [
         'type': 'CText',
     },
     {
-        'object': 'myDatePicker2',
-        'type': 'CDatePickerSingle',
-    },
-    {
-        'object': 'singleText',
-        'type': 'CText',
-    },
-    {
         'object': 'myUpload',
         'type': 'CUpload',
     },
     {
         'object': 'uploadText',
+        'type': 'CText',
+    },
+    {
+        'object': 'myTabs',
+        'type': 'CTabs',
+    },
+    {
+        'object': 'tabsText',
+        'type': 'CText',
+    },
+    {
+        'object': 'myUploadTable',
+        'type': 'CUpload',
+    },
+    {
+        'object': 'myDataTable',
+        'type': 'CDataTable',
+    },
+    {
+        'object': 'myInputTable',
+        'type': 'CDataTable',
+    },
+    {
+        'object': 'outputTable',
+        'type': 'CText',
+    },
+    {
+        'object': 'persons',
         'type': 'CText',
     },
 ]
