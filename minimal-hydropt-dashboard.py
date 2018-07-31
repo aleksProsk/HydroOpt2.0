@@ -108,7 +108,7 @@ class CRestricted(object):
 		if name is None and screenName is None:
 			self.__localID = CRestricted.__id
 		else:
-			self.__localID = name + '-' + self.__class__.__name__ + '-' + screenName
+			self.__localID = (name if name is not None else 'unspecifiedObject[' + CRestricted.__id + ']') + '-' + self.__class__.__name__ + '-' + screenName
 		print('name: ', name)
 		print('screenName: ', screenName)
 		print('classname: ', self.__class__.__name__)
