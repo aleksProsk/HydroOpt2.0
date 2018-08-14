@@ -10,11 +10,12 @@ CDashComponent = DashComponent.CDashComponent
 class CText(CDashComponent):
     def __init__(self, text, style = {}, name=None, screenName=None):
         super().__init__(name, screenName)
+        self.__style = style
         self.update(text)
     def getText(self): return self.__text
     def update(self, text):
         self.__text = text
-        super().setDashRendering(html.P(str(text), className='text', id=str(super().getID())))
+        super().setDashRendering(html.P(str(text), className='text', id=str(super().getID()), style=self.__style))
 
 class CNumber(CText):
     def __init__(self, value, unit, name=None, screenName=None):

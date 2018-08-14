@@ -64,7 +64,7 @@ CSafeMenu = Restricted.CSafeMenu
 CSafeList = Restricted.CSafeList
 
 from components import DashComponent, Chart, Text, Container, StopWaitingForGraphics, DataTable, DatePickerRange, DatePickerSingle, Dropdown, Slider, RangeSlider, InputComponent
-from components import TextArea, Checklist, RadioItems, Button, Upload, Map, TopologyMap, Frame, Page, Tabs, NavigationPane, Interval, PieChart, Image
+from components import TextArea, Checklist, RadioItems, Button, Upload, Map, TopologyMap, Frame, Page, Tabs, NavigationPane, Interval, PieChart, Image, Modal, SelectList
 CDashComponent = DashComponent.CDashComponent
 CChart = Chart.CChart
 CText = Text.CText
@@ -93,6 +93,8 @@ CNavigationPane = NavigationPane.CNavigationPane
 CInterval = Interval.CInterval
 CPieChart = PieChart.CPieChart
 CImage = Image.CImage
+CModal = Modal.CModal
+CSelectList = SelectList.CSelectList
 
 @infix.div_infix
 def m(f,x): return list(map(f,x))
@@ -220,6 +222,8 @@ def load_script_uid(scriptpath, name, uid, args):
 		'CSafeList': CSafeList,
 		'Create': lambda o, *a: CreateObjectWithScreenName(o=o, scName=args['screen'], args=a),
 		'CSafeMenu': CSafeMenu,
+		'CModal': CModal,
+		'CSelectList': CSelectList,
 		'args':CSafeDict(args, user=user)}
 	return load_script(scriptpath, globals, {}, name)
 	
@@ -258,7 +262,7 @@ dash_app = Dash(__name__, server=flask_app, url_base_pathname='/d/')
 
 print("start dash...")
 
-dash_app.title = 'HydroOpt2.0 Demo'
+dash_app.title = 'HydroOpt2.0 Dev Tools'
 dash_app.layout = html.Div(id='page-content', children=[dcc.Location(id='url', refresh=False), dt0])
 
 dash_app.css.config.serve_locally = False
@@ -443,6 +447,8 @@ def createUpdateCallback(uid, screen):
 			inputLst.append(Input(id, 'figure'))
 		elif obj['type'] == 'CImage':
 			inputLst.append(Input(id, 'children'))
+		else:
+			num = 0
 		for i in range(num):
 			stateLst.append(State(id, 'id'))
 	if len(objects) > 0:
@@ -567,11 +573,19 @@ for screen in screenNames:
 #Extract all the interactions
 interactionsDict = parse("001")
 
+print(interactionsDict)
 for interaction in interactionsDict:
 	inputLst = []
 	for input in interaction['input']:
-		inputId = generateId(input['object'], input['type'], interaction['screen'])
-		inputLst.append(Input(inputId, input['param']))
+		if len(input['type']) < 19 or input['type'][0:19] != 'CSelectList-labels-':
+			inputId = generateId(input['object'], input['type'], interaction['screen'])
+			inputLst.append(Input(inputId, input['param']))
+		else:
+			tType, tmp, cnt = input['type'].split('-')
+			for i in range(int(cnt)):
+				inputId = generateId(input['object'], tType, interaction['screen']) + '-label-' + str(i)
+				inputLst.append(Input(inputId, input['param']))
+				print(inputId)
 		'''
 		if input['type'] == 'CDatePickerRange':
 			inputLst.append(Input(inputId, 'start_date'))

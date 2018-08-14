@@ -27,4 +27,24 @@ objects = [
         'object': 'slider1',
         'type': 'CSlider',
     },
+    {
+        'object': 'btn',
+        'type': 'CButton',
+    },
+    {
+        'object': 'modal',
+        'type': 'CModal',
+    },
+    {
+        'object': 'modalCloser',
+        'type': 'CText',
+    },
+    {
+        'object': 'modalContent',
+        'type': 'CContainer',
+    },
+    {
+        'object': 'mySelectList',
+        'type': 'CSelectList',
+    },
 ]

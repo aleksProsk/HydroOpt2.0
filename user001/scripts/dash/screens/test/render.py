@@ -1,8 +1,6 @@
 log.print("starting renderer")
 
 datePickerFrame = CFrame("Date pickers", width = 0.5, height = 0.2, style={})
-myWaitStopper = CStopWaitingForGraphics()
-datePickerFrame.aChild(myWaitStopper)
 
 myDatePicker = Create(CDatePickerRange, {'name' : 'myDatePicker'})
 myOutput = Create(CText, {'name': 'myOutput', 'text':'Here should be selected date range!'})
@@ -141,6 +139,8 @@ myScreen.aChild(inputFields)
 myScreen.aChild(buttons)
 myScreen.aChild(uploads)
 myScreen.aChild(inputTable)
+myWaitStopper = CStopWaitingForGraphics()
+myScreen.aChild(myWaitStopper)
 
 return myScreen
 

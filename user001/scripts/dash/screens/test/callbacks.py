@@ -65,5 +65,3 @@ def getPersons(selected_row_indices):
 	dataTable = screenVariables.get('myInputTable')
 	log.print(dataTable.getRows())
 	return 'You selected: ' + '\n' + str(dataTable.getRowsByIndices(selected_row_indices))
-
-

@@ -80,7 +80,7 @@ myDataTable = Create(CDataTable, {'name': 'myDataTable'})
 myPieChart = Create(CPieChart, {'name': 'myPieChart', 'labels': ["US", "China", "European Union", "Russian Federation", "Brazil", "India", "Rest of World"],
                                 'values': [16, 15, 12, 6, 5, 4, 42], 'title': 'Global Emissions 1990-2011', 'hole': 0.4})
 
-myImg = Create(CImage, {'name': 'myImg', 'src': 'logo.png', 'format': 'png'})
+myImg = Create(CImage, {'name': 'myImg', 'src': 'view.jpg', 'format': 'jpg'})
 
 myFrame.aChild(myDatePicker)
 myFrame.aChild(myOutput)

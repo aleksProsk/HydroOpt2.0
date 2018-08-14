@@ -163,9 +163,11 @@ class CSafeMenu(CRestricted):
 		return nestedList
 
 class CSafeList(CRestricted):
-	def __init__(self, user = CUser(), list = []):
+	def __init__(self, user = CUser(), lst = []):
 		super().__init__(user)
-		self.__lst = list
+		self.__lst = list(lst)
+	def set(self, position, value):
+		self.__lst[position] = value
 	def get(self, position):
 		return self.__lst[position]
 	def append(self, value):

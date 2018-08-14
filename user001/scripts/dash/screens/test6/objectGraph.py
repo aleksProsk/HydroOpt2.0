@@ -39,4 +39,45 @@ d = [
     ],
     'callback': 'updateChart',
 },
-]
+{
+    'output': {
+        'object': 'modal',
+        'param': 'style',
+        'type': 'CModal',
+    },
+    'input': [
+        {
+            'object': 'btn',
+            'param': 'n_clicks',
+            'type': 'CButton',
+        },
+        {
+            'object': 'modalCloser',
+            'param': 'n_clicks',
+            'type': 'CText',
+        },
+    ],
+    'state': [
+        {
+            'object': 'modal',
+            'param': 'style',
+            'type': 'CModal',
+        },
+    ],
+    'callback': 'loadModal',
+},
+{
+    'output': {
+        'object': 'mySelectList',
+        'param': 'children',
+        'type': 'CSelectList',
+    },
+    'input': [
+        {
+            'object': 'mySelectList',
+            'param': 'n_clicks',
+            'type': 'CSelectList-labels-3',
+        },
+    ],
+    'callback': 'selectListInteraction',
+}]
